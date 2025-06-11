@@ -80,17 +80,122 @@ async function authentification() {
     }
 }
 authentification();
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function () { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+
+Object.defineProperty(exports, "__esModule", { value: true });
+
+const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
+const logger_1 = __importDefault(require("@whiskeysockets/baileys/lib/Utils/logger"));
+const logger = logger_1.default.child({});
+logger.level = 'silent';
+
+const pino = require("pino");
+const boom_1 = require("@hapi/boom");
+const conf = require("./set");
+const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+const FileType = require("file-type");
+const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
+const { verifierEtatJid, recupererActionJid } = require("./bdd/antilien");
+const { atbverifierEtatJid, atbrecupererActionJid } = require("./bdd/antibot");
+const evt = require(__dirname + "/framework/zokou");
+const { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./bdd/banUser");
+const { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./bdd/banGroup");
+const { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./bdd/onlyAdmin");
+const { reagir } = require(__dirname + "/framework/app");
+
+var session = conf.session.replace(/POPKID;;;=>/g, "");
+const prefixe = conf.PREFIXE;
+const more = String.fromCharCode(8206);
+const readmore = more.repeat(4001);
+
+// Express Web Server
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.use(express.static(path.join(__dirname, "public")));
+app.listen(PORT, () => {
+    console.log(`🌐 Server is running at http://localhost:${PORT}`);
+});
+
+// Auto Bio Function
+const startTime = Date.now();
+async function autoBio(sock) {
+    try {
+        const uptime = process.uptime();
+        const hours = Math.floor(uptime / 3600);
+        const minutes = Math.floor((uptime % 3600) / 60);
+        const seconds = Math.floor(uptime % 60);
+        const statusText = `Popkid GLX is alive since ${hours}h ${minutes}m ${seconds}s`;
+        await sock.updateProfileStatus(statusText);
+        console.log("✅ Bio updated:", statusText);
+    } catch (err) {
+        console.error("❌ Auto Bio Error:", err);
+    }
+}
+
+// Authentication
+async function authentification() {
+    try {
+        const scanPath = path.join(__dirname, "/scan/creds.json");
+        if (!fs.existsSync(scanPath)) {
+            console.log("🔒 Connexion en cour...");
+            await fs.writeFileSync(scanPath, atob(session), "utf8");
+        } else if (session != "zokk") {
+            await fs.writeFileSync(scanPath, atob(session), "utf8");
+        }
+    } catch (e) {
+        console.log("❌ Session Invalid:", e);
+    }
+}
+authentification();
+
+// In-Memory Store
 const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
+
+// Main Function
 setTimeout(() => {
     async function main() {
-        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
+        const { version } = await (0, baileys_1.fetchLatestBaileysVersion)();
         const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/scan");
-        const sockOptions = {
+
+        const sock = (0, baileys_1.default)({
             version,
             logger: pino({ level: "silent" }),
-            browser: ['Bmw-Md', "safari", "1.0.0"],
+            browser: ['Popkid-GLX', 'Chrome', '1.0.0'],
             printQRInTerminal: true,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
@@ -99,11 +204,35 @@ setTimeout(() => {
             generateHighQualityLinkPreview: true,
             markOnlineOnConnect: false,
             keepAliveIntervalMs: 30_000,
-            /* auth: state*/ auth: {
+            auth: {
                 creds: state.creds,
-                /** caching makes the store faster to send/recv messages */
                 keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
             },
+            getMessage: async (key) => {
+                if (store) {
+                    const msg = await store.loadMessage(key.remoteJid, key.id);
+                    return msg?.message || undefined;
+                }
+                return { conversation: "An error occurred, please retry!" };
+            }
+        });
+
+        // Store Binding & Save Creds
+        store.bind(sock.ev);
+        sock.ev.on("creds.update", saveCreds);
+
+        // 🔄 Auto Bio Initial + Every 5 Minutes
+        await autoBio(sock);
+        setInterval(() => autoBio(sock), 5 * 60 * 1000);
+
+        // ⚙️ Load Event Handlers
+        if (evt) evt(sock, store, conf);
+
+        console.log("✅ POPKID GLX Bot is up and running!");
+    }
+
+    main();
+}, 2000);
             //////////
             getMessage: async (key) => {
                 if (store) {
