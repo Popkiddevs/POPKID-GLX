@@ -1,55 +1,65 @@
-const { zokou } = require(__dirname + "/../framework/zokou");
-const ytsearch = require("yt-search");
-const fetch = require("node-fetch");
+const { zokou } = require("../framework/zokou");
+const yts = require("yt-search");
+const axios = require("axios");
 
-zokou(
-  {
-    nomCom: "play",
-    categorie: "Download",
-    reaction: "🎵",
-  },
-  async (dest, zk, commandeOptions) => {
-    const { ms, repondre, arg } = commandeOptions;
-    const query = arg.join(" ");
+zokou({
+  nomCom: "play",
+  categorie: "Download",
+  reaction: "🎧"
+}, async (msg, sock, context) => {
+  const { ms, repondre, arg, nomCom } = context;
 
-    try {
-      if (!query) return repondre("🎶 Please provide a song name or YouTube link.");
-
-      const yt = await ytsearch(query);
-      if (!yt.videos.length) return repondre("🔍 No results found!");
-
-      const song = yt.videos[0];
-      const apiUrl = `https://apis.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(song.url)}`;
-
-      const response = await fetch(apiUrl);
-      const songRes = await response.json();
-
-      if (!songRes?.result?.downloadUrl) return repondre("❌ Download failed. Try again later.");
-
-      await zk.sendMessage(
-        dest,
-        {
-          audio: { url: songRes.result.downloadUrl },
-          mimetype: "audio/mpeg",
-          fileName: `${song.title}.mp3`,
-          contextInfo: {
-            externalAdReply: {
-              title: song.title.length > 25 ? song.title.substring(0, 22) + "..." : song.title,
-              body: `📤 Uploaded by ${song.author.name}`,
-              thumbnailUrl: song.thumbnail.replace("default.jpg", "hqdefault.jpg"),
-              sourceUrl: "https://whatsapp.com/channel/0029VadQrNI8KMqo79BiHr3l",
-              mediaUrl: "https://whatsapp.com/channel/0029VadQrNI8KMqo79BiHr3l",
-              mediaType: 1,
-              renderLargerThumbnail: true,
-              showAdAttribution: true,
-            },
-          },
-        },
-        { quoted: ms }
-      );
-    } catch (error) {
-      console.error("Error in play command:", error);
-      repondre("❌ An error occurred. Please try again.");
-    }
+  if (!arg[0]) {
+    return repondre("🎧 *Please provide a song name to play!*\n\n_Example:_ `.play Alan Walker Faded`");
   }
-);
+
+  const query = arg.join(" ");
+  repondre(`🔎 *Searching for:* _${query}_`);
+
+  try {
+    const searchResult = await yts(query);
+    const videos = searchResult.videos;
+
+    if (videos.length === 0) {
+      return repondre("❌ *No results found!*\nTry another song title.");
+    }
+
+    const song = videos[0];
+    const videoUrl = song.url;
+    const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp3?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
+    const { data } = await axios.get(apiUrl);
+
+    if (data.status === 200 && data.success) {
+      const audioUrl = data.result.download_url;
+
+      // Send audio with thumbnail and stylish caption
+      await sock.sendMessage(msg, {
+        image: { url: song.thumbnail },
+        caption: `🎶 *${song.title}*\n\n📺 *Channel:* ${song.author.name}\n⏱ *Duration:* ${song.timestamp}\n🌐 *URL:* ${videoUrl}\n\n_📥 Downloading audio..._`,
+      }, { quoted: ms });
+
+      await sock.sendMessage(msg, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mp4"
+      }, { quoted: ms });
+
+      // Send interactive buttons
+      await sock.sendMessage(msg, {
+        text: `✅ *Download Complete!*\n\n🎵 *${song.title}*\n🧠 Powered by *POPKID-XMD*\n\n💬 What would you like to do next?`,
+        footer: "🎧 Music Downloader by POPKID",
+        buttons: [
+          { buttonId: `${nomCom} ${query}`, buttonText: { displayText: "🔁 Download Again" }, type: 1 },
+          { buttonId: "channel", buttonText: { displayText: "📢 Join Channel" }, type: 1 }
+        ],
+        headerType: 1
+      }, { quoted: ms });
+
+    } else {
+      repondre("⚠️ *Failed to download audio.* Try again later.");
+    }
+
+  } catch (err) {
+    console.error("Play Command Error:", err);
+    repondre("❌ *Something went wrong!*\nPlease try again later.");
+  }
+});
