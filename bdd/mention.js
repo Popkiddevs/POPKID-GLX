@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to the JSON file storing mention data
-const filePath = path.join(__dirname, '../xmd/mention.json');
+const filePath = path.join(__dirname, '../popkid/mention.json');
 
 // Load data from the JSON file
 function loadMentionData() {
