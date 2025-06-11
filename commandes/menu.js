@@ -8,7 +8,7 @@ const { zokou } = require(__dirname + "/../framework/zokou");
 const { format } = require(__dirname + "/../framework/mesfonctions");
 const s = require(__dirname + "/../set");
 
-const cyberDivider = "═╬═╬═╬═╬═╬═╬═╬═╬═╬═╬═╬═";
+const cyberDivider = "╬═╬═╬═╬═╬═╬═╬═╬═╬═╬";
 const fancyEnd = "⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭";
 
 // Styled bot info
@@ -19,25 +19,23 @@ function getBotInfo(mode) {
   const totalRAM = format(os.totalmem());
 
   return `
-╔═══[ 🤖 B.M.B-TECH BOT ]═══╗
+╭═════[ 🤖 *POPKID-TECH BOT* ]═════╮
 
-🧠 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫: @255767862457
-🌐 𝐌𝐨𝐝𝐞: ${mode.toUpperCase()}
-⏰ 𝐓𝐢𝐦𝐞: ${currentTime} (EAT)
-💾 𝐑𝐀𝐌: ${usedRAM} / ${totalRAM}
+🧠 *Developer*: @254111385747
+📡 *Mode*: ${mode.toUpperCase()}
+⏰ *Time*: ${currentTime} (EAT)
+💾 *RAM*: ${usedRAM} / ${totalRAM}
 
-╚═══${cyberDivider}═══╝
+╰═════${cyberDivider}═════╯
 `;
 }
 
-// Styled menu categories
+// Styled command menu
 function buildMenu(coms, prefixe) {
   let menu = `
-╔═[ ⚙️ COMMAND MENU ⚙️ ]═╗
+╔═[ ⚙️ *COMMAND MENU* ⚙️ ]═╗
 
-💡 Use: *${prefixe}help <command>* for details
-
-`;
+💡 Use *${prefixe}menu <command>* for more info\n`;
 
   const categoryStyles = {
     General: { icon: "🌐" },
@@ -53,19 +51,19 @@ function buildMenu(coms, prefixe) {
 
   for (const cat in coms) {
     const icon = categoryStyles[cat]?.icon || "✨";
-    menu += `\n╭───⟪ ${icon} *${cat.toUpperCase()}* ⟫───╮\n`;
+    menu += `\n╭──── ${icon} *${cat.toUpperCase()}* ────╮\n`;
 
     coms[cat].forEach((cmd) => {
-      menu += `│ ➤ ${cmd}\n`;
+      menu += `│ ✦ ${prefixe}${cmd}\n`;
     });
 
     menu += `╰────────────────────╯\n`;
   }
 
   menu += `
-📞 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫𝐬:
-↳ @255767862457 (Main)
-↳ @255767862457 (BMB)
+👨‍💻 *Developers*:
+➤ @254111385747 (Main Dev)
+➤ @25473229794 (Popkid Team)
 
 ${fancyEnd}
 `;
@@ -73,7 +71,7 @@ ${fancyEnd}
   return menu;
 }
 
-// Send media (video, image, or fallback to text)
+// Send media (image/video/gif fallback)
 async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
   if (mediaUrl.match(/\.(mp4|gif)$/i)) {
     await zk.sendMessage(
@@ -81,9 +79,9 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
       {
         video: { url: mediaUrl },
         caption,
-        footer: "⚡ BMB-XBOT ⚡",
-        mentions,
         gifPlayback: true,
+        footer: "⚡ POPKID-XBOT ⚡",
+        mentions,
       },
       { quoted: ms }
     );
@@ -93,7 +91,7 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
       {
         image: { url: mediaUrl },
         caption,
-        footer: "⚡ BMB-XBOT ⚡",
+        footer: "⚡ POPKID-XBOT ⚡",
         mentions,
       },
       { quoted: ms }
@@ -110,9 +108,30 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
   }
 }
 
-// Send random voice note
+// Send stylish text with forwarded channel look
+async function sendForwardedText(zk, dest, ms, text, sender) {
+  await zk.sendMessage(
+    dest,
+    {
+      text,
+      contextInfo: {
+        mentionedJid: [sender],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363290715861418@newsletter",
+          newsletterName: "PopkidXtech",
+          serverMessageId: 143,
+        },
+      },
+    },
+    { quoted: ms }
+  );
+}
+
+// Send random hacker-style voice
 async function sendRandomVoiceNote(zk, dest, ms, repondre) {
-  const folder = path.join(__dirname, "../bmb/");
+  const folder = path.join(__dirname, "../popkidd/");
   if (!fs.existsSync(folder)) {
     return repondre(`📁 Audio folder not found at:\n${folder}`);
   }
@@ -131,13 +150,13 @@ async function sendRandomVoiceNote(zk, dest, ms, repondre) {
       audio: { url: audioPath },
       mimetype: "audio/mpeg",
       ptt: true,
-      fileName: `B.M.B VOICE ✧`,
+      fileName: `🗣 POPKID VOICE`,
     },
     { quoted: ms }
   );
 }
 
-// Main command export
+// Main zokou command
 zokou(
   {
     nomCom: "menu",
@@ -160,12 +179,15 @@ zokou(
       const lien = await mybotpic();
       const infoText = getBotInfo(mode);
       const menuText = buildMenu(coms, prefixe);
-      const mentions = ["255767862457@s.whatsapp.net"];
+      const finalText = infoText + menuText;
 
-      await sendMenuMedia(zk, dest, ms, lien, infoText + menuText, mentions);
+      // Send stylish text as forwarded-from-channel
+      await sendForwardedText(zk, dest, ms, finalText, ms.key.participant || ms.key.remoteJid);
+
+      // Optional: Send audio as extra effect
       await sendRandomVoiceNote(zk, dest, ms, repondre);
     } catch (err) {
-      console.error(`[DEBUG] menu: ${err}`);
+      console.error(`[DEBUG menu error]: ${err}`);
       repondre(`❌ Failed to load menu:\n${err.message}`);
     }
   }
