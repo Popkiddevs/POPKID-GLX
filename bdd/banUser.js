@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to the JSON file storing banned users
-const filePath = path.join(__dirname, '../xmd/banUser.json');
+const filePath = path.join(__dirname, '../popkid/banUser.json');
 
 // Load data from JSON file
 function loadBanUserData() {
