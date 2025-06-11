@@ -80,122 +80,17 @@ async function authentification() {
     }
 }
 authentification();
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function () { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-
-Object.defineProperty(exports, "__esModule", { value: true });
-
-const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
-const logger_1 = __importDefault(require("@whiskeysockets/baileys/lib/Utils/logger"));
-const logger = logger_1.default.child({});
-logger.level = 'silent';
-
-const pino = require("pino");
-const boom_1 = require("@hapi/boom");
-const conf = require("./set");
-const axios = require("axios");
-const fs = require("fs-extra");
-const path = require("path");
-const FileType = require("file-type");
-const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const { verifierEtatJid, recupererActionJid } = require("./bdd/antilien");
-const { atbverifierEtatJid, atbrecupererActionJid } = require("./bdd/antibot");
-const evt = require(__dirname + "/framework/zokou");
-const { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./bdd/banUser");
-const { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./bdd/banGroup");
-const { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./bdd/onlyAdmin");
-const { reagir } = require(__dirname + "/framework/app");
-
-var session = conf.session.replace(/POPKID;;;=>/g, "");
-const prefixe = conf.PREFIXE;
-const more = String.fromCharCode(8206);
-const readmore = more.repeat(4001);
-
-// Express Web Server
-const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 3000;
-app.use(express.static(path.join(__dirname, "public")));
-app.listen(PORT, () => {
-    console.log(`🌐 Server is running at http://localhost:${PORT}`);
-});
-
-// Auto Bio Function
-const startTime = Date.now();
-async function autoBio(sock) {
-    try {
-        const uptime = process.uptime();
-        const hours = Math.floor(uptime / 3600);
-        const minutes = Math.floor((uptime % 3600) / 60);
-        const seconds = Math.floor(uptime % 60);
-        const statusText = `Popkid GLX is alive since ${hours}h ${minutes}m ${seconds}s`;
-        await sock.updateProfileStatus(statusText);
-        console.log("✅ Bio updated:", statusText);
-    } catch (err) {
-        console.error("❌ Auto Bio Error:", err);
-    }
-}
-
-// Authentication
-async function authentification() {
-    try {
-        const scanPath = path.join(__dirname, "/scan/creds.json");
-        if (!fs.existsSync(scanPath)) {
-            console.log("🔒 Connexion en cour...");
-            await fs.writeFileSync(scanPath, atob(session), "utf8");
-        } else if (session != "zokk") {
-            await fs.writeFileSync(scanPath, atob(session), "utf8");
-        }
-    } catch (e) {
-        console.log("❌ Session Invalid:", e);
-    }
-}
-authentification();
-
-// In-Memory Store
 const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
-
-// Main Function
 setTimeout(() => {
     async function main() {
-        const { version } = await (0, baileys_1.fetchLatestBaileysVersion)();
+        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
         const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/scan");
-
-        const sock = (0, baileys_1.default)({
+        const sockOptions = {
             version,
             logger: pino({ level: "silent" }),
-            browser: ['Popkid-GLX', 'Chrome', '1.0.0'],
+            browser: ['popkid-Md', "safari", "1.0.0"],
             printQRInTerminal: true,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
@@ -204,35 +99,11 @@ setTimeout(() => {
             generateHighQualityLinkPreview: true,
             markOnlineOnConnect: false,
             keepAliveIntervalMs: 30_000,
-            auth: {
+            /* auth: state*/ auth: {
                 creds: state.creds,
+                /** caching makes the store faster to send/recv messages */
                 keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
             },
-            getMessage: async (key) => {
-                if (store) {
-                    const msg = await store.loadMessage(key.remoteJid, key.id);
-                    return msg?.message || undefined;
-                }
-                return { conversation: "An error occurred, please retry!" };
-            }
-        });
-
-        // Store Binding & Save Creds
-        store.bind(sock.ev);
-        sock.ev.on("creds.update", saveCreds);
-
-        // 🔄 Auto Bio Initial + Every 5 Minutes
-        await autoBio(sock);
-        setInterval(() => autoBio(sock), 5 * 60 * 1000);
-
-        // ⚙️ Load Event Handlers
-        if (evt) evt(sock, store, conf);
-
-        console.log("✅ POPKID GLX Bot is up and running!");
-    }
-
-    main();
-}, 2000);
             //////////
             getMessage: async (key) => {
                 if (store) {
@@ -1003,7 +874,7 @@ zk.ev.on("messages.upsert", async (m) => {
         // Check if the command is issued in a group
         if (!sender.endsWith("@g.us")) {
             await zk.sendMessage(sender, {
-                text: `❌ This command only works in groups.\n\n🚀 Popkid-TECH`,
+                text: `❌ This command only works in groups.\n\n🚀 POPKID-TECH`,
             });
             return;
         }
@@ -1077,10 +948,10 @@ zk.ev.on("messages.upsert", async (m) => {
             var membreGroupe = verifGroupe ? ms.key.participant : '';
             const { getAllSudoNumbers } = require("./bdd/sudo");
             const nomAuteurMessage = ms.pushName;
-            const dj = '254111385747';
-            const dj2 = '254111385747';
-            const dj3 = "254111385747";
-            const luffy = '254111385747';
+            const dj = '254710772666';
+            const dj2 = '254710772666';
+            const dj3 = "254710772666";
+            const luffy = '254710772666';
             const sudo = await getAllSudoNumbers();
             const superUserNumbers = [servBot, dj, dj2, dj3, luffy, conf.NUMERO_OWNER].map((s) => s.replace(/[^0-9]/g) + "@s.whatsapp.net");
             const allAllowedNumbers = superUserNumbers.concat(sudo);
@@ -1554,13 +1425,13 @@ zk.ev.on('group-participants.update', async (group) => {
         const metadata = await zk.groupMetadata(group.id);
 
         if (group.action == 'add' && (await recupevents(group.id, "welcome") == 'on')) {
-            let msg = `*B.M.B-TECH WELCOME MESSAGE*`;
+            let msg = `*POPKID-TECH WELCOME MESSAGE*`;
             let membres = group.participants;
             for (let membre of membres) {
                 msg += ` \n❒ *Hey* 🖐️ @${membre.split("@")[0]} WELCOME TO OUR GROUP. \n\n`;
             }
 
-            msg += `❒ *READ THE GROUP DESCRIPTION TO AVOID GETTING REMOVED BY B.M.B-TECH.* `;
+            msg += `❒ *READ THE GROUP DESCRIPTION TO AVOID GETTING REMOVED BY POPKID-TECH.* `;
 
             zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
         } else if (group.action == 'remove' && (await recupevents(group.id, "goodbye") == 'on')) {
@@ -1731,15 +1602,16 @@ zk.ev.on('group-participants.update', async (group) => {
 
                 let cmsg =` ⁠⁠⁠⁠
 ╭─────────────━┈⊷ 
-│🌍 *B.M.B-TECH ɪs ᴄᴏɴɴᴇᴄᴛᴇᴅ*🌍
+│🌍 *POPKID-TECH ɪs ᴄᴏɴɴᴇᴄᴛᴇᴅ*🌍
 ╰─────────────━┈⊷
 │💫 ᴘʀᴇғɪx: *[ ${prefixe} ]*
 │⭕ ᴍᴏᴅᴇ: *${md}*
-│💢 *BOT NAME* B.M.B-TECH
+│💢 *BOT NAME* POPKID-TECH
 ╰─────────────━┈⊷
 
 *Follow our Channel For Updates*
-> https://whatsapp.com/channel/0029VawO6hgF6sn7k3SuVU3z
+> https://whatsapp.com/channel/0029VadQrNI8KMqo79BiHr3l
+
                 
                 
                  `;
