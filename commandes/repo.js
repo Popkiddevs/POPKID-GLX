@@ -11,14 +11,14 @@ zokou(
 
     try {
       const repoLink = "https://github.com/Popkiddevs/POPKID-GLX";
-      const imageUrl = "https://telegra.ph/file/e08c1803aa2e18d0de3d1.jpg"; // ✅ WORKING fallback image
+      const imageUrl = "https://files.catbox.moe/x0ohbm.jpg"; // ✅ WORKING fallback image
 
       const caption = `
 ╭═〔 🧠 *POPKID-GLX REPOSITORY* 〕═╮
 
 📁 *Bot Name:* POPKID-GLX  
 🌐 *GitHub:* ${repoLink}  
-🛠️ *Developer:* @255767862457  
+🛠️ *Developer:* @254111385747
 ⚙️ *Framework:* Baileys  
 ✨ *Fast, Clean & Reliable*
 
