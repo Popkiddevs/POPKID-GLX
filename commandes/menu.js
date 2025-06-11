@@ -156,6 +156,19 @@ async function sendRandomVoiceNote(zk, dest, ms, repondre) {
   );
 }
 
+function getRandomImageFromFolder() {
+  const folder = path.join(__dirname, "../popkidd_images/");
+  if (!fs.existsSync(folder)) return null;
+
+  const imageFiles = fs.readdirSync(folder).filter(f =>
+    f.match(/\.(jpg|jpeg|png)$/i)
+  );
+  if (!imageFiles.length) return null;
+
+  const randomImage = imageFiles[Math.floor(Math.random() * imageFiles.length)];
+  return path.join(folder, randomImage);
+}
+
 zokou(
   {
     nomCom: "menu",
@@ -163,7 +176,7 @@ zokou(
     reaction: "⚡",
   },
   async (dest, zk, commandeOptions) => {
-    const { ms, repondre, prefixe, nomAuteurMessage, mybotpic } = commandeOptions;
+    const { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
     const { cm } = require(__dirname + "/../framework/zokou");
 
     let coms = {};
@@ -175,13 +188,18 @@ zokou(
     }
 
     try {
-      const lien = await mybotpic();
       const infoText = getBotInfo(mode);
       const menuText = buildMenu(coms, prefixe);
       const finalText = infoText + menuText;
       const sender = ms.key.participant || ms.key.remoteJid;
 
-      await sendForwardedText(zk, dest, ms, finalText, sender);
+      const imagePath = getRandomImageFromFolder();
+      if (imagePath) {
+        await sendMenuMedia(zk, dest, ms, imagePath, finalText, [sender]);
+      } else {
+        await sendForwardedText(zk, dest, ms, finalText, sender);
+      }
+
       await sendRandomVoiceNote(zk, dest, ms, repondre);
     } catch (err) {
       console.error(`[DEBUG menu error]: ${err}`);
