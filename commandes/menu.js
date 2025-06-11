@@ -8,10 +8,10 @@ const { zokou } = require(__dirname + "/../framework/zokou");
 const { format } = require(__dirname + "/../framework/mesfonctions");
 const s = require(__dirname + "/../set");
 
-const cyberDivider = "╬═╬═╬═╬═╬═╬═╬═╬═╬═╬";
-const fancyEnd = "⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭⟬⟭";
+// Cyber-styled dividers
+const topDivider = "▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃";
+const categoryDivider = "━━━━━━━━━━━━━━";
 
-// Styled bot info
 function getBotInfo(mode) {
   moment.tz.setDefault("EAT");
   const currentTime = moment().format("HH:mm:ss");
@@ -19,59 +19,61 @@ function getBotInfo(mode) {
   const totalRAM = format(os.totalmem());
 
   return `
-╭═════[ 🤖 *POPKID-TECH BOT* ]═════╮
-
-🧠 *Developer*: @254111385747
-📡 *Mode*: ${mode.toUpperCase()}
-⏰ *Time*: ${currentTime} (EAT)
-💾 *RAM*: ${usedRAM} / ${totalRAM}
-
-╰═════${cyberDivider}═════╯
+╭═〔 🚀 *POPKID-TECH BOT SYSTEM* 〕═╮
+│
+│ ⚙️ *Status:* ONLINE
+│ 🔰 *Mode:* ${mode.toUpperCase()}
+│ ⏱ *Time:* ${currentTime} (EAT)
+│ 🧠 *Dev:* @254111385747
+│ 🖥 *RAM:* ${usedRAM} / ${totalRAM}
+│
+╰═${topDivider}═╯
 `;
 }
 
-// Styled command menu
 function buildMenu(coms, prefixe) {
   let menu = `
-╔═[ ⚙️ *COMMAND MENU* ⚙️ ]═╗
+🧾 *COMMAND INDEX*
 
-💡 Use *${prefixe}menu <command>* for more info\n`;
+🔎 Use: *${prefixe}help <command>* to get command info
+${categoryDivider}
+`;
 
   const categoryStyles = {
-    General: { icon: "🌐" },
-    Group: { icon: "👥" },
-    Mods: { icon: "🛡️" },
-    Fun: { icon: "🎉" },
-    Search: { icon: "🔎" },
-    Logo: { icon: "🎨" },
-    Utilities: { icon: "🧰" },
-    Adult: { icon: "🔞" },
-    Download: { icon: "📥" },
+    General: "🌐",
+    Group: "👥",
+    Mods: "🛡️",
+    Fun: "🎉",
+    Search: "🔎",
+    Logo: "🎨",
+    Utilities: "🧰",
+    Adult: "🔞",
+    Download: "📥",
   };
 
   for (const cat in coms) {
-    const icon = categoryStyles[cat]?.icon || "✨";
-    menu += `\n╭──── ${icon} *${cat.toUpperCase()}* ────╮\n`;
+    const icon = categoryStyles[cat] || "✨";
+    menu += `\n${icon} *${cat.toUpperCase()}*\n`;
 
     coms[cat].forEach((cmd) => {
-      menu += `│ ✦ ${prefixe}${cmd}\n`;
+      menu += `┣ 🧩 *${prefixe}${cmd}*\n`;
     });
 
-    menu += `╰────────────────────╯\n`;
+    menu += categoryDivider + "\n";
   }
 
   menu += `
-👨‍💻 *Developers*:
-➤ @254111385747 (Main Dev)
-➤ @25473229794 (Popkid Team)
+👨‍💻 *DEVELOPERS*
+ ┗ @254111385747 (Main Dev)
+ ┗ @25473229794 (Popkid Team)
 
-${fancyEnd}
+📡 Powered by *POPKID-GLX SYSTEM*
+${topDivider}
 `;
 
   return menu;
 }
 
-// Send media (image/video/gif fallback)
 async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
   if (mediaUrl.match(/\.(mp4|gif)$/i)) {
     await zk.sendMessage(
@@ -79,9 +81,9 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
       {
         video: { url: mediaUrl },
         caption,
-        gifPlayback: true,
         footer: "⚡ POPKID-XBOT ⚡",
         mentions,
+        gifPlayback: true,
       },
       { quoted: ms }
     );
@@ -108,7 +110,6 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
   }
 }
 
-// Send stylish text with forwarded channel look
 async function sendForwardedText(zk, dest, ms, text, sender) {
   await zk.sendMessage(
     dest,
@@ -120,7 +121,7 @@ async function sendForwardedText(zk, dest, ms, text, sender) {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363290715861418@newsletter",
-          newsletterName: "PopkidXtech",
+          newsletterName: "PopkidGlx",
           serverMessageId: 143,
         },
       },
@@ -129,7 +130,6 @@ async function sendForwardedText(zk, dest, ms, text, sender) {
   );
 }
 
-// Send random hacker-style voice
 async function sendRandomVoiceNote(zk, dest, ms, repondre) {
   const folder = path.join(__dirname, "../popkidd/");
   if (!fs.existsSync(folder)) {
@@ -156,7 +156,6 @@ async function sendRandomVoiceNote(zk, dest, ms, repondre) {
   );
 }
 
-// Main zokou command
 zokou(
   {
     nomCom: "menu",
@@ -180,11 +179,9 @@ zokou(
       const infoText = getBotInfo(mode);
       const menuText = buildMenu(coms, prefixe);
       const finalText = infoText + menuText;
+      const sender = ms.key.participant || ms.key.remoteJid;
 
-      // Send stylish text as forwarded-from-channel
-      await sendForwardedText(zk, dest, ms, finalText, ms.key.participant || ms.key.remoteJid);
-
-      // Optional: Send audio as extra effect
+      await sendForwardedText(zk, dest, ms, finalText, sender);
       await sendRandomVoiceNote(zk, dest, ms, repondre);
     } catch (err) {
       console.error(`[DEBUG menu error]: ${err}`);
