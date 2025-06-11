@@ -34,8 +34,7 @@ function getBotInfo(mode) {
 function buildMenu(coms, prefixe) {
   let menu = `
 🧾 *COMMAND INDEX*
-
-🔎 Use: *${prefixe}help <command>* to get command info
+🔎 Use: *${prefixe}help* to get command info
 ${categoryDivider}
 `;
 
@@ -54,11 +53,9 @@ ${categoryDivider}
   for (const cat in coms) {
     const icon = categoryStyles[cat] || "✨";
     menu += `\n${icon} *${cat.toUpperCase()}*\n`;
-
     coms[cat].forEach((cmd) => {
       menu += `┣ 🧩 *${prefixe}${cmd}*\n`;
     });
-
     menu += categoryDivider + "\n";
   }
 
@@ -110,6 +107,7 @@ async function sendMenuMedia(zk, dest, ms, mediaUrl, caption, mentions) {
   }
 }
 
+// ✅ Forwarded menu text styled as from newsletter
 async function sendForwardedText(zk, dest, ms, text, sender) {
   await zk.sendMessage(
     dest,
@@ -120,11 +118,11 @@ async function sendForwardedText(zk, dest, ms, text, sender) {
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363290715861418@newsletter",
-          newsletterName: "PopkidGlx",
-          serverMessageId: 143,
-        },
-      },
+          newsletterJid: "120363290715861418@newsletter", // Make sure it's valid
+          newsletterName: "PopkidXtech", // Displayed name
+          serverMessageId: 1 // Must be a real existing message ID from your channel
+        }
+      }
     },
     { quoted: ms }
   );
@@ -176,7 +174,7 @@ zokou(
     reaction: "⚡",
   },
   async (dest, zk, commandeOptions) => {
-    const { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    const { ms, repondre, prefixe } = commandeOptions;
     const { cm } = require(__dirname + "/../framework/zokou");
 
     let coms = {};
