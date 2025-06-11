@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to the JSON file storing banned groups
-const filePath = path.join(__dirname, '../xmd/banGroup.json');
+const filePath = path.join(__dirname, '../popkid/banGroup.json');
 
 // Load data from JSON file
 function loadBanGroupData() {
