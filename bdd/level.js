@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to the JSON file storing user rank data
-const filePath = path.join(__dirname, '../xmd/users_rank.json');
+const filePath = path.join(__dirname, '../popkid/users_rank.json');
 
 // Load user data from JSON file
 function loadUserData() {
