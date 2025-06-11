@@ -1,17 +1,12 @@
 {
-  "name": "𝗣𝗢𝗣𝗞𝗜𝗗-𝗠𝗗 𝗕𝗢𝗧",
-  "description": "POPKID-MD is a multidevice WhatsApp bot built to make your WhatsApp enjoyable...",
-  "keywords": [
-    "bot",
-    "node",
-    "baileys",
-    "whatsapp"
-  ],
-  "logo": "https://files.catbox.moe/nk71o3.jpg",
-  "repository": "https://github.com/Popkiddevs/POPKID-XTECH",
-  "succes_url": "/",
-  "stack": "container",
-  "env": {
+  "name":"B.M.B-TECH",
+  "description":"Best whatsapp bot💥 developed by bmb tech🇹🇿 ",
+  "keywords":["bot","node","baileys","whatsapp"],
+  "logo":"https://files.catbox.moe/hflcbc.jpg",
+  "repository":"https://github.com/ekitale/maths-project",
+  "succes_url":"/",
+  "stack":"heroku-24",
+  "env":{
     "PREFIX":
     {
       "description":"choose your prefix of bot",
@@ -63,7 +58,7 @@
     "BOT_NAME" : {
        
       "description":"put A name for your bot",
-      "value":"POPKID-TECH",
+      "value":"B.M.B-TECH",
       "required":false
 
     } ,
@@ -103,14 +98,14 @@
     
     "desc": "Your Name",
     "required": false,
-    "value": "POPKID-XMD"
+    "value": "𝙱.𝙼.𝙱-𝚇𝙼𝙳"
   },
     "NUMERO_OWNER":
   {
     
     "desc": "Your number , dont put '+' and put you area code(exemple of kenya '254')",
     "required":true,
-    "value": "254111385747"
+    "value": "255767862457"
   },
     "WARN_COUNT":
   {
