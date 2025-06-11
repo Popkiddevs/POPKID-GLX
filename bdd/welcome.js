@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Path to the JSON file storing event data
-const filePath = path.join(__dirname, '../xmd/events.json');
+const filePath = path.join(__dirname, '../popkid/events.json');
 
 // Load data from the JSON file
 function loadEventData() {
