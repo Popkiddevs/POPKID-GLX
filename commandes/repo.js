@@ -11,18 +11,16 @@ zokou(
 
     try {
       const repoLink = "https://github.com/Popkiddevs/POPKID-GLX";
-      const imageUrl = "https://telegra.ph/file/89c35b8df3a1a5c60f305.jpg"; // 👈 Replace this with your custom image if needed
+      const imageUrl = "https://telegra.ph/file/e08c1803aa2e18d0de3d1.jpg"; // ✅ WORKING fallback image
 
       const caption = `
 ╭═〔 🧠 *POPKID-GLX REPOSITORY* 〕═╮
 
-📁 *Bot Name:* POPKID-GLX
-🌐 *GitHub:* [Click Here](${repoLink})
-🛠️ *Developer:* @255767862457
-🧰 *Type:* WhatsApp Multi-device Bot
-⚙️ *Framework:* Baileys
-
-🪄 Power your chat with style, speed & security.
+📁 *Bot Name:* POPKID-GLX  
+🌐 *GitHub:* ${repoLink}  
+🛠️ *Developer:* @255767862457  
+⚙️ *Framework:* Baileys  
+✨ *Fast, Clean & Reliable*
 
 ╰═▃▃▃▃▃▃▃▃▃▃▃▃▃═╯
 `;
